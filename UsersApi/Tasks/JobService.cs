@@ -7,6 +7,8 @@ using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using System.Threading.Tasks;
 using System.Net.Http;
+using System.Collections.Generic;
+using System.Web.Script.Serialization;
 
 namespace UsersApi.Tasks
 {
@@ -28,20 +30,22 @@ namespace UsersApi.Tasks
             return Task.CompletedTask;
         }
 
-        async Task<UserModel> RequestToApi()
+        async Task<List<UserModel>> RequestToApi()
         {
             HttpClient client = new HttpClient();
-            client.BaseAddress = new Uri("https://randomuser.me");
+            client.BaseAddress = new Uri("https://randomuser.me/");
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "/api");
+            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "/api?results=2");
             var responseTask = await client.SendAsync(request);
 
             string response = await responseTask.Content.ReadAsStringAsync();
-            response = response.Substring(response.IndexOf("[") + 1);
-            response = response.Substring(0, response.IndexOf("]"));
+            //response = response.Substring(response.IndexOf("[") );
+            //response = response.Substring(0, response.IndexOf("]")+1);
 
-            return JsonConvert.DeserializeObject<UserModel>(response);
+            //var users = new JavaScriptSerializer().Deserialize<List<UserModel>>(response);
+            var users = JsonConvert.DeserializeObject<UsersJson>(response);
+            return users.Users;
         }
         private async void DoWork(object state)
         {
@@ -50,45 +54,41 @@ namespace UsersApi.Tasks
                 try
                 {
                     Context _context = scope.ServiceProvider.GetRequiredService<Context>();
-                    UserModel model = await RequestToApi();
-                    string countryName = model.Location.country;
-                    string username = model.Login.username;
+                    List<UserModel> users = await RequestToApi();
 
-                    var country = await _context.Countries.FindAsync(countryName);
-                    var user = await _context.Users.FindAsync(username);
-                    if (user != null)
+                    users.ForEach(async userModel =>
                     {
-                        user = _context.Users.Find(username);
-                    }
-                    else
-                    {
-                        user = new User()
+                        string countryName = userModel.Location.country;
+                        string username = userModel.Login.username;
+
+                        var country = await _context.Countries.FindAsync(countryName);
+                        var user = await _context.Users.FindAsync(username);
+                        if (user != null)
                         {
-                            Email = model.Email,
-                            Gender = model.Gender,
-                            Id = username
-                        };
-                        _context.Users.Add(user);
+                            user = _context.Users.Find(username);
+                        }
+                        else
+                        {
+                            user = new User(userModel.FullName, userModel.Gender, userModel.Email);
+                            _context.Users.Add(user);
+                            //_context.SaveChanges();
+                            //user = _context.Users.Find(user.Id);
+                        }
+                        if (country != null)
+                        {
+                            country.Users.Add(user);
+                        }
+                        else
+                        {
+                            country = new Country((string)userModel.Location.country);
+                            //user = _context.Users.Find(user.Id);
+                            country.Users.Add(user);
+                            _context.Countries.Add(country);
+                        }
                         _context.SaveChanges();
-                        user = _context.Users.Find(user.Id);
-                    }
-                    if (country != null)
-                    {
-                        country.Users.Add(user);
-                    }
-                    else
-                    {
-                        country = new Country()
-                        {
-                            Id = model.Location.country
-                        };
-                        user = _context.Users.Find(user.Id);
-                        country.Users.Add(user);
-                        _context.Countries.Add(country);
-                    }
-                    _context.SaveChanges();
+                    });
                 }
-                catch
+                catch(Exception ex)
                 {
 
                 }

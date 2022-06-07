@@ -21,9 +21,7 @@ namespace DemiconUsers.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<dynamic>>> Get()
         {
-
             var list = await Task.FromResult( _context.Set<Country>().ToList());
-                //.Select(a => new Country() { Id = a.Id, Name=a.Name, Users = a.Users }).ToList();
 
             return list.Select(a => new
             {
