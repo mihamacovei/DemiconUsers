@@ -1,0 +1,40 @@
+﻿<html>
+<head>
+    <script src="~/Assets/vue.min.js"></script>
+    <link href="~/Assets/index.css" rel="stylesheet" />
+    <title>Users connector</title>
+</head>
+<body>
+
+    <div class="window" id="app">
+        <div class="top-panel">
+            <div class="form-wrapper">
+                <select v-model="currentCountry">
+                    <option v-for="country in countryNames">{{country}}</option>
+                </select>
+            </div>
+            <button class="btn" v-on:click="reload">Reload</button>
+        </div>
+        <div class="user-list-wrapper">
+            <div class="user-list">
+                <div class="user" v-for="user in users">
+                    <div class="row">
+                        <div class="name">UserName: </div>
+                        <div>{{user.name}}</div>
+                    </div>
+                    <div class="row">
+                        <div class="name">Gender: </div>
+                        <div>{{user.gender}}</div>
+                    </div>
+                    <div class="row">
+                        <div class="name">Email: </div>
+                        <div>{{user.email}}</div>
+                    </div>
+                    <hr />
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="~/Assets/index.js"></script>
+</body>
+</html>
