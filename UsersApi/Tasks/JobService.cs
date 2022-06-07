@@ -36,7 +36,8 @@ namespace UsersApi.Tasks
             client.BaseAddress = new Uri("https://randomuser.me/");
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "/api?results=2");
+            const int noOfUsers = 25;
+            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "/api?results="+noOfUsers);
             var responseTask = await client.SendAsync(request);
 
             string response = await responseTask.Content.ReadAsStringAsync();
