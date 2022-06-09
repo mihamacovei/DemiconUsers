@@ -108,9 +108,7 @@ namespace UsersApi.BusinessLayer
                     ApiContext _context = scope.ServiceProvider.GetRequiredService<ApiContext>();
                     List<User> users = await GetUsersFromApi();
 
-                    var usr = _context.Users.ToList();
-                    List<User> newUsers = users.Where(u => _context.Users.FindAsync(u.Id) == null).ToList();
-
+                    var newUsers = await GetUsersNotExistsInDb(_context.Users, users);
                     await _context.BulkInsertAsync(newUsers);
                     //in EF 6 can do this; EF 6 is not supported in VS 2019 windows
                     //_context.BulkInsert(users, options => {
@@ -123,6 +121,28 @@ namespace UsersApi.BusinessLayer
 
                 }
             }
+        }
+
+        private async Task<List<User>> GetUsersNotExistsInDb(DbSet<User> dbUsers, List<User> users)
+        {
+            List<User> newUsers = new List<User>();//users.Where(u => _context.Users.FindAsync(u.Id) == null).ToList();
+
+            var userIds = users.Select(c => c.Id);
+            var usersInDb = await dbUsers
+                .Where(u => userIds.Contains(u.Id))
+                .ToListAsync(); // single DB query
+            foreach (var user in users)
+            {
+                var userInDb = usersInDb
+                    .SingleOrDefault(u => u.Id == user.Id); // runs in memory
+                if (userInDb == null)
+                    newUsers.Add(user);
+                /*
+                _context.Users.ApplyCurrentValues(country);
+                _context.Users.AddObject(country);
+                */
+            }
+            return newUsers;
         }
         #endregion
 
