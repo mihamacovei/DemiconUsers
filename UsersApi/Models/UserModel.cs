@@ -1,22 +1,23 @@
 ﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
+using UsersApi.BusinessLayer;
 
 namespace UsersApi.Models
 {
-    public class UsersJson
+    public class UsersJsonModel
     {
         [JsonProperty("results")]
-        public List<UserModel> Users { get; set; }
+        public List<ApiUserModel> Users { get; set; }
     }
-
-    public class UserModel
+    public class UsersResultModel
     {
-        public string Gender { get; set; }
-        public dynamic Name { get; set; }
+        [JsonProperty("countries")]
+        public List<CountryUsersModel> Countries { get; set; }
 
-        public string FullName => string.Join(" ", this.Name.first, this.Name.last);
-        public dynamic Login { get; set; }
-        public dynamic Location { get; set; }
-        public string Email { get; set; }
+        public UsersResultModel()
+        {
+            Countries = new List<CountryUsersModel>();
+        }
     }
 }

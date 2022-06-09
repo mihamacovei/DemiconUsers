@@ -1,13 +1,17 @@
-﻿
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using UsersApi.Models;
+using Microsoft.Extensions.Hosting;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using UsersApi.DataAccessLayer;
 using UsersApi.Tasks;
 using Microsoft.EntityFrameworkCore;
+using UsersApi.BusinessLayer;
 
 namespace UsersApi
 {
@@ -23,18 +27,27 @@ namespace UsersApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
-
+            //services.AddRazorPages();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddMemoryCache();
-            services.AddDbContext<Context>(option => option.UseInMemoryDatabase("Country"));
+            services.AddDbContext<ApiContext>(option => option.UseInMemoryDatabase("DemiconUsers"));
+
+            services.AddControllers();
             //Singlteton JobTask
-            services.AddHostedService<JobService>();
-            services.AddAuthorization();
+            services.AddHostedService<JobTask>();
+
+            //builder.Services.AddControllersWithViews();
+
+            services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+            //services.AddAutoMapper(typeof(Startup).Assembly);
+
+            services.AddMvc();
+
+            services.AddSingleton<IUserService, UserService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
             {
@@ -42,11 +55,23 @@ namespace UsersApi
             }
             else
             {
-                app.UseHsts();
+                app.UseExceptionHandler("/Error");
             }
 
-            app.UseHttpsRedirection();
-            app.UseMvc();
+            app.UseStaticFiles();
+
+            app.UseRouting();
+
+            app.UseAuthorization();
+
+            app.UseEndpoints(endpoints =>
+            {
+                //endpoints.MapRazorPages();
+                endpoints.MapControllers();
+                endpoints.MapControllerRoute(
+                    name: "default",
+                    pattern: "{controller=Users}/{action=GetUsers}/");
+            });
         }
     }
 }
