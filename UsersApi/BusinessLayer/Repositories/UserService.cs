@@ -10,6 +10,7 @@ using System.Net.Http.Headers;
 using Newtonsoft.Json;
 using Microsoft.Extensions.DependencyInjection;
 using EFCore.BulkExtensions;
+using Microsoft.EntityFrameworkCore;
 
 namespace UsersApi.BusinessLayer
 {
@@ -109,8 +110,13 @@ namespace UsersApi.BusinessLayer
 
                     var usr = _context.Users.ToList();
                     List<User> newUsers = users.Where(u => _context.Users.FindAsync(u.Id) == null).ToList();
-                    _context.BulkInsert(newUsers);//cannot await void?
-                    await _context.SaveChangesAsync();   
+
+                    await _context.BulkInsertAsync(newUsers);
+                    //in EF 6 can do this; EF 6 is not supported in VS 2019 windows
+                    //_context.BulkInsert(users, options => {
+                    //    options.InsertIfNotExists = true;
+                    //    options.ColumnPrimaryKeyExpression = c => c.Id;
+                    //});
                 }
                 catch (Exception ex)
                 {
