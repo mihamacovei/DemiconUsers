@@ -23,9 +23,9 @@ namespace UsersApi.BusinessLayer
         #endregion
 
         #region Constructor
-        public UserService(IServiceScopeFactory dbContextScopeFactory, ApiContext context, IMapper mapper)
+        public UserService(IServiceScopeFactory dbContextScopeFactory, IMapper mapper)
         {
-            _context = context;
+            //_context = context;
             _dbContextScopeFactory = dbContextScopeFactory;
             _mapper = mapper;
 
@@ -41,16 +41,20 @@ namespace UsersApi.BusinessLayer
         {
             try
             {
-                List<User> users;
-                if (!string.IsNullOrEmpty(country))
+                using (var scope = _dbContextScopeFactory.CreateScope())
                 {
-                    users =  _context.Users.Select(u => u).ToList(); //await...ToListAsync..?
+                    ApiContext _context = scope.ServiceProvider.GetRequiredService<ApiContext>();
+                    List<User> users;
+                    if (!string.IsNullOrEmpty(country))
+                    {
+                        users = _context.Users.Select(u => u).ToList(); //await...ToListAsync..?
+                    }
+                    else
+                    {
+                        users = _context.Users.ToList();//await...ToListAsync..?
+                    }
+                    return BuildUsersByCountry(users);
                 }
-                else
-                {
-                    users =  _context.Users.ToList();//await...ToListAsync..?
-                }
-                return BuildUsersByCountry(users);
             }
             catch (Exception ex)
             {
@@ -103,7 +107,8 @@ namespace UsersApi.BusinessLayer
                     ApiContext _context = scope.ServiceProvider.GetRequiredService<ApiContext>();
                     List<User> users = await GetUsersFromApi();
 
-                    List<User> newUsers =users.Where(u => _context.Users.FindAsync(u.Id) == null).ToList();
+                    var usr = _context.Users.ToList();
+                    List<User> newUsers = users.Where(u => _context.Users.FindAsync(u.Id) == null).ToList();
                     _context.BulkInsert(newUsers);//cannot await void?
                     await _context.SaveChangesAsync();   
                 }
