@@ -107,9 +107,11 @@ namespace UsersApi.BusinessLayer
                 {
                     ApiContext _context = scope.ServiceProvider.GetRequiredService<ApiContext>();
                     List<User> users = await GetUsersFromApi();
-
                     var newUsers = await GetUsersNotExistsInDb(_context.Users, users);
-                    await _context.BulkInsertAsync(newUsers);
+                    _context.Users.AddRange(newUsers);
+                    _context.SaveChanges();
+                    
+                    //await _context.BulkInsertAsync(newUsers);
                     //Relational-specific methods can only be used when the context is using a relational database provider.
                     //InMemory is not intended to be a relational database.
                     //If you're using an InMemory database, you'll want to skip running migrations
@@ -122,7 +124,6 @@ namespace UsersApi.BusinessLayer
                 }
                 catch (Exception ex)
                 {
-
                 }
             }
         }
