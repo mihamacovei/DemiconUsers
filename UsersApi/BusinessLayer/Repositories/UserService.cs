@@ -110,6 +110,10 @@ namespace UsersApi.BusinessLayer
 
                     var newUsers = await GetUsersNotExistsInDb(_context.Users, users);
                     await _context.BulkInsertAsync(newUsers);
+                    //Relational-specific methods can only be used when the context is using a relational database provider.
+                    //InMemory is not intended to be a relational database.
+                    //If you're using an InMemory database, you'll want to skip running migrations
+
                     //in EF 6 can do this; EF 6 is not supported in VS 2019 windows
                     //_context.BulkInsert(users, options => {
                     //    options.InsertIfNotExists = true;
